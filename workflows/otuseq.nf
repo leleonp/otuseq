@@ -89,7 +89,7 @@ workflow OTUSEQ {
             .set { abundance_table_input }
 
         // Generate Abundance Tables
-        ABUNDANCE_TABLE(abundance_table_input)
+        ABUNDANCE_TABLES(abundance_table_input)
 
         // Phylogenetic Tree
         PHYLOGENETIC_TREE(VSEARCH_MERGE.out.final_rep_seqs)
