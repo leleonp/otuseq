@@ -3,8 +3,7 @@ process ABUNDANCE_TABLES {
     container 'public.ecr.aws/b1n7j4p9/qiime2:2023.2'
 
     input:
-        path filtered_table
-        val level
+        tuple val(level), path(filtered_table)
 
     output:
         path "level-${level}-table.qza"
