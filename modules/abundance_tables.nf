@@ -4,21 +4,20 @@ process ABUNDANCE_TABLES {
 
     input:
         path filtered_table
+        val level
 
     output:
-        path 'abundance_tables/*'
+        path "level-${level}-table.qza"
+        path "level-${level}/*"
 
     script:
         """
-        mkdir abundance_tables
-        for level in 2 3 4 5 6 7; do
-            qiime taxa collapse \
-                --i-table $filtered_table \
-                --p-level \$level \
-                --o-collapsed-table abundance_tables/level-\${level}-table.qza
-            qiime tools export \
-                --input-path abundance_tables/level-\${level}-table.qza \
-                --output-path abundance_tables/level-\${level}
-        done
+        qiime taxa collapse \
+            --i-table $filtered_table \
+            --p-level $level \
+            --o-collapsed-table level-${level}-table.qza
+        qiime tools export \
+            --input-path level-${level}-table.qza \
+            --output-path level-${level}
         """
 }

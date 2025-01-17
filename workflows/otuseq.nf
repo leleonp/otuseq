@@ -15,6 +15,8 @@ include { VSEARCH_MERGE             } from '../modules/vsearch_merge'
 include { TAXONOMY_CLASSIFICATION   } from '../modules/taxonomy_classification'
 include { FILTER_TAXA               } from '../modules/filter_taxa'
 include { ABUNDANCE_TABLES          } from '../modules/abundance_tables'
+include { PHYLOGENETIC_TREE         } from '../modules/phylogenetic_tree'
+include { CONVERT_TO_PHYLOSEQ       } from '../modules/convert_to_phyloseq'
 
 
 /*
@@ -81,11 +83,24 @@ workflow OTUSEQ {
     // Filter Unwanted Taxa
     FILTER_TAXA(VSEARCH_MERGE.out.final_table, TAXONOMY_CLASSIFICATION.out)
 
+    Channel
+        .of(2, 3, 4, 5, 6, 7)
+        .combine(FILTER_TAXA.out)
+        .set { abundance_table_input }
+
     // Generate Abundance Tables
-    ABUNDANCE_TABLES(FILTER_TAXA.out)
+    ABUNDANCE_TABLE(abundance_table_input)
 
     // Phylogenetic Tree
     PHYLOGENETIC_TREE(VSEARCH_MERGE.out.final_rep_seqs)
+
+    // CONVERT_TO_PHYLOSEQ(
+    //     FILTER_TAXA.out,
+    //     TAXONOMY_CLASSIFICATION.out,
+    //     PHYLOGENETIC_TREE.out.rooted_tree,
+    //     params.metadata
+    // )
+
 
 //    emit:
 
