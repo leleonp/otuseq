@@ -50,49 +50,49 @@ workflow OTUSEQ {
         }
         filt_reads = forw_reads.combine(rev_reads, by: 0)
 
-    // Quality Control
-    FASTQC(samples)
+        // Quality Control
+        FASTQC(samples)
 
-    // Primer Trimming
-    CUTADAPT(filt_reads)
+        // Primer Trimming
+        CUTADAPT(filt_reads)
 
-    // MultiQC Report
-    multiqc_ch = FASTQC.out.mix(CUTADAPT.out.logs)
-    MULTIQC(multiqc_ch.collect())
+        // MultiQC Report
+        multiqc_ch = FASTQC.out.mix(CUTADAPT.out.logs)
+        MULTIQC(multiqc_ch.collect())
 
 
-    trimmed_reads = CUTADAPT.out.trimmed_reads.map { file ->
-        def nameParts = file[0].name.tokenize('_')
-        def baseName = nameParts[0..-5].join('_')
-        [baseName, file[0], file[1]]
-    }
+        trimmed_reads = CUTADAPT.out.trimmed_reads.map { file ->
+            def nameParts = file[0].name.tokenize('_')
+            def baseName = nameParts[0..-5].join('_')
+            [baseName, file[0], file[1]]
+        }
 
-    // QIIME2 Import
-    QIIME2_IMPORT(trimmed_reads)
+        // QIIME2 Import
+        QIIME2_IMPORT(trimmed_reads)
 
-    // VSEARCH steps
-    VSEARCH_DEREPLICATE(QIIME2_IMPORT.out)
+        // VSEARCH steps
+        VSEARCH_DEREPLICATE(QIIME2_IMPORT.out)
 
-    VSEARCH_CLUSTER(VSEARCH_DEREPLICATE.out.derep_table, VSEARCH_DEREPLICATE.out.derep_rep_seqs)
+        VSEARCH_CLUSTER(VSEARCH_DEREPLICATE.out.derep_table, VSEARCH_DEREPLICATE.out.derep_rep_seqs)
 
-    VSEARCH_MERGE(VSEARCH_CLUSTER.out.clustered_table.collect(), VSEARCH_CLUSTER.out.clustered_rep_seqs.collect())
+        VSEARCH_MERGE(VSEARCH_CLUSTER.out.clustered_table.collect(), VSEARCH_CLUSTER.out.clustered_rep_seqs.collect())
 
-    // Taxonomic Classification
-    TAXONOMY_CLASSIFICATION(VSEARCH_MERGE.out.final_rep_seqs, params.ref_database)
+        // Taxonomic Classification
+        TAXONOMY_CLASSIFICATION(VSEARCH_MERGE.out.final_rep_seqs, params.ref_database)
 
-    // Filter Unwanted Taxa
-    FILTER_TAXA(VSEARCH_MERGE.out.final_table, TAXONOMY_CLASSIFICATION.out)
+        // Filter Unwanted Taxa
+        FILTER_TAXA(VSEARCH_MERGE.out.final_table, TAXONOMY_CLASSIFICATION.out)
 
-    Channel
-        .of(2, 3, 4, 5, 6, 7)
-        .combine(FILTER_TAXA.out)
-        .set { abundance_table_input }
+        Channel
+            .of(2, 3, 4, 5, 6, 7)
+            .combine(FILTER_TAXA.out)
+            .set { abundance_table_input }
 
-    // Generate Abundance Tables
-    ABUNDANCE_TABLE(abundance_table_input)
+        // Generate Abundance Tables
+        ABUNDANCE_TABLE(abundance_table_input)
 
-    // Phylogenetic Tree
-    PHYLOGENETIC_TREE(VSEARCH_MERGE.out.final_rep_seqs)
+        // Phylogenetic Tree
+        PHYLOGENETIC_TREE(VSEARCH_MERGE.out.final_rep_seqs)
 
     // CONVERT_TO_PHYLOSEQ(
     //     FILTER_TAXA.out,
