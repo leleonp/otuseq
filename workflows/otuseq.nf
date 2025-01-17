@@ -4,7 +4,18 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { REMOVE_HOMOPOLYMERS } from '../modules/remove_homopolymers'
+include { REMOVE_HOMOPOLYMERS       } from '../modules/remove_homopolymers'
+include { FASTQC                    } from '../modules/fastqc'
+include { CUTADAPT                  } from '../modules/cutadapt'
+include { MULTIQC                   } from '../modules/multiqc'
+include { QIIME2_IMPORT             } from '../modules/qiime2_import'
+include { VSEARCH_DEREPLICATE       } from '../modules/vsearch_dereplicate'
+include { VSEARCH_CLUSTER           } from '../modules/vsearch_cluster'
+include { VSEARCH_MERGE             } from '../modules/vsearch_merge'
+include { TAXONOMY_CLASSIFICATION   } from '../modules/taxonomy_classification'
+include { FILTER_TAXA               } from '../modules/filter_taxa'
+include { ABUNDANCE_TABLES          } from '../modules/abundance_tables'
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -36,7 +47,45 @@ workflow OTUSEQ {
             [baseName, file]
         }
         filt_reads = forw_reads.combine(rev_reads, by: 0)
-        filt_reads.view()
+
+    // Quality Control
+    FASTQC(samples)
+
+    // Primer Trimming
+    CUTADAPT(filt_reads)
+
+    // MultiQC Report
+    multiqc_ch = FASTQC.out.mix(CUTADAPT.out.logs)
+    MULTIQC(multiqc_ch.collect())
+
+
+    trimmed_reads = CUTADAPT.out.trimmed_reads.map { file ->
+        def nameParts = file[0].name.tokenize('_')
+        def baseName = nameParts[0..-5].join('_')
+        [baseName, file[0], file[1]]
+    }
+
+    // QIIME2 Import
+    QIIME2_IMPORT(trimmed_reads)
+
+    // VSEARCH steps
+    VSEARCH_DEREPLICATE(QIIME2_IMPORT.out)
+
+    VSEARCH_CLUSTER(VSEARCH_DEREPLICATE.out.derep_table, VSEARCH_DEREPLICATE.out.derep_rep_seqs)
+
+    VSEARCH_MERGE(VSEARCH_CLUSTER.out.clustered_table.collect(), VSEARCH_CLUSTER.out.clustered_rep_seqs.collect())
+
+    // Taxonomic Classification
+    TAXONOMY_CLASSIFICATION(VSEARCH_MERGE.out.final_rep_seqs, params.ref_database)
+
+    // Filter Unwanted Taxa
+    FILTER_TAXA(VSEARCH_MERGE.out.final_table, TAXONOMY_CLASSIFICATION.out)
+
+    // Generate Abundance Tables
+    ABUNDANCE_TABLES(FILTER_TAXA.out)
+
+    // Phylogenetic Tree
+    PHYLOGENETIC_TREE(VSEARCH_MERGE.out.final_rep_seqs)
 
 //    emit:
 
