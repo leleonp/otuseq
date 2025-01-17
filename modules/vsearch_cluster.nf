@@ -15,7 +15,7 @@ process VSEARCH_CLUSTER {
         qiime vsearch cluster-features-de-novo \
             --i-table $derep_table \
             --i-sequences $derep_rep_seqs \
-            --p-perc-identity ${params.perc_identity} \
+            --p-perc-identity 0.97 \
             --o-clustered-table ${derep_table.simpleName}_clustered-table.qza \
             --o-clustered-sequences ${derep_table.simpleName}_clustered-rep-seqs.qza
         """
