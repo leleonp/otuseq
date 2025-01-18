@@ -15,7 +15,7 @@ include { VSEARCH_MERGE             } from '../modules/vsearch_merge'
 include { TAXONOMY_CLASSIFICATION   } from '../modules/taxonomy_classification'
 include { FILTER_TAXA               } from '../modules/filter_taxa'
 include { ABUNDANCE_TABLES          } from '../modules/abundance_tables'
-include { PHYLOGENETIC_TREE         } from '../modules/phylogenetic_tree'
+// include { PHYLOGENETIC_TREE         } from '../modules/phylogenetic_tree'
 //include { CONVERT_TO_PHYLOSEQ       } from '../modules/convert_to_phyloseq'
 
 
