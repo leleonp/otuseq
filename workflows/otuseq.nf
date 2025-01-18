@@ -94,7 +94,7 @@ workflow OTUSEQ {
         ABUNDANCE_TABLES(abundance_table_input)
 
         // Phylogenetic Tree
-        PHYLOGENETIC_TREE(VSEARCH_MERGE.out.final_rep_seqs)
+        // PHYLOGENETIC_TREE(VSEARCH_MERGE.out.final_rep_seqs)
 
     // CONVERT_TO_PHYLOSEQ(
     //     FILTER_TAXA.out,
