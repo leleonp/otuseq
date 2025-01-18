@@ -2,6 +2,7 @@ process CUTADAPT {
     tag "Cutadapt on $sample_id"
     publishDir "${params.outdir}/cutadapt", mode: 'copy'
     container 'public.ecr.aws/biocontainers/cutadapt:4.9--py310h1fe012e_3'
+    label 'process_low'
 
     input:
         tuple val(sample_id), path(forward), path(reverse)

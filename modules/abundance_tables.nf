@@ -1,6 +1,7 @@
 process ABUNDANCE_TABLES {
     publishDir "${params.outdir}/abundance", mode: 'copy'
     container 'public.ecr.aws/b1n7j4p9/qiime2:2023.2'
+    label 'process_low'
 
     input:
         tuple val(level), path(filtered_table)
