@@ -1,8 +1,8 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://raw.githubusercontent.com/leleonp/template/master/nextflow_schema.json",
-    "title": "leleonp/template pipeline parameters",
-    "description": "Template to populate with modules",
+    "$id": "https://raw.githubusercontent.com/leleonp/otuseq/master/nextflow_schema.json",
+    "title": "otuseq pipeline parameters",
+    "description": "OTUs 16s pipeline",
     "type": "object",
     "$defs": {
         "input_output_options": {
