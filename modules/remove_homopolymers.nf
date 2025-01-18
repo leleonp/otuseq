@@ -1,8 +1,6 @@
 process REMOVE_HOMOPOLYMERS {
     tag "Removing homopolymers from ${sample_id}"
-    label 'process_low'
     container "community.wave.seqera.io/library/biopython_pandas:dbbdf93e473af259"
-    label 'process_low'
 
     input:
         tuple val(sample_id), path(R1), path(R2)

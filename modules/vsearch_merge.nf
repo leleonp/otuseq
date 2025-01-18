@@ -1,7 +1,7 @@
 process VSEARCH_MERGE {
     publishDir "${params.outdir}/final", mode: 'copy'
     container 'public.ecr.aws/b1n7j4p9/qiime2:2023.2'
-    label 'process_medium'
+
 
     input:
         path clustered_table_files

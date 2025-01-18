@@ -1,7 +1,6 @@
 process VSEARCH_CLUSTER {
     publishDir "${params.outdir}/clustered", mode: 'copy'
     container 'public.ecr.aws/b1n7j4p9/qiime2:2023.2'
-    label 'process_low'
 
     input:
         path derep_table
