@@ -20,6 +20,7 @@ process PHYLOGENETIC_TREE {
             --o-alignment aligned-rep-seqs.qza \
             --o-masked-alignment masked-aligned-rep-seqs.qza \
             --o-tree unrooted-tree.qza \
-            --o-rooted-tree rooted-tree.qza
+            --o-rooted-tree rooted-tree.qza \
+            --p-n-threads auto
         """
 }
