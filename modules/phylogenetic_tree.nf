@@ -1,7 +1,7 @@
 process PHYLOGENETIC_TREE {
     publishDir "${params.outdir}/phylogeny", mode: 'copy'
     container 'public.ecr.aws/b1n7j4p9/qiime2:2023.2'
-    label 'process_high'
+    label 'process_medium'
     label 'error_retry'
 
     input:
