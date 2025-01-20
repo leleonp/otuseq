@@ -81,11 +81,11 @@ workflow OTUSEQ {
 
         VSEARCH_CLUSTER(VSEARCH_DEREPLICATE.out.derep_table, VSEARCH_DEREPLICATE.out.derep_rep_seqs)
 
-        // Perform taxonomic classification on individual sequences
-        TAXONOMY_CLASSIFICATION(VSEARCH_CLUSTER.out.clustered_rep_seqs, params.ref_database)
-
         // Now perform the merge
         VSEARCH_MERGE(VSEARCH_CLUSTER.out.clustered_table.collect(), VSEARCH_CLUSTER.out.clustered_rep_seqs.collect())
+
+        // Perform taxonomic classification on individual sequences
+        TAXONOMY_CLASSIFICATION(VSEARCH_MERGE.out.final_rep_seqs, params.ref_database)
 
         //Merge taxonomy
         MERGE_TAXONOMY(TAXONOMY_CLASSIFICATION.out.collect())
