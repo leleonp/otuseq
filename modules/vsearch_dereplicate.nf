@@ -7,8 +7,8 @@ process VSEARCH_DEREPLICATE {
         path demux_sample_qza
 
     output:
-        path "${demux_sample_qza.simpleName}_table.qza", emit: derep_table
-        path "${demux_sample_qza.simpleName}_rep-seqs.qza", emit: derep_rep_seqs
+        path "table.qza", emit: derep_table
+        path "rep-seqs.qza", emit: derep_rep_seqs
 
     script:
         """
@@ -19,7 +19,7 @@ process VSEARCH_DEREPLICATE {
 
         qiime vsearch dereplicate-sequences \
             --i-sequences merged-seqs.qza \
-            --o-dereplicated-table ${demux_sample_qza.simpleName}_table.qza \
-            --o-dereplicated-sequences ${demux_sample_qza.simpleName}_rep-seqs.qza
+            --o-dereplicated-table table.qza \
+            --o-dereplicated-sequences rep-seqs.qza
         """
 }

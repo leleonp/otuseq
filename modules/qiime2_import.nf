@@ -7,7 +7,7 @@ process QIIME2_IMPORT {
         tuple val(sample_id), path(forward_fastq), path(reverse_fastq)
 
     output:
-        path "${sample_id}_demux.qza", emit: demux
+        path "demux.qza", emit: demux
 
     script:
         """
@@ -22,6 +22,6 @@ process QIIME2_IMPORT {
             --type 'SampleData[PairedEndSequencesWithQuality]' \
             --input-path reads \
             --input-format CasavaOneEightSingleLanePerSampleDirFmt \
-            --output-path ${sample_id}_demux.qza
+            --output-path demux.qza
         """
 }

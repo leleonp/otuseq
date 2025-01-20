@@ -8,8 +8,8 @@ process VSEARCH_CLUSTER {
         path derep_rep_seqs
 
     output:
-        path "${derep_table.simpleName}_clustered-table.qza", emit: clustered_table
-        path "${derep_table.simpleName}_clustered-rep-seqs.qza", emit: clustered_rep_seqs
+        path "clustered-table.qza", emit: clustered_table
+        path "clustered-rep-seqs.qza", emit: clustered_rep_seqs
 
     script:
         """
@@ -17,7 +17,7 @@ process VSEARCH_CLUSTER {
             --i-table $derep_table \
             --i-sequences $derep_rep_seqs \
             --p-perc-identity ${params.perc_identity} \
-            --o-clustered-table ${derep_table.simpleName}_clustered-table.qza \
-            --o-clustered-sequences ${derep_table.simpleName}_clustered-rep-seqs.qza
+            --o-clustered-table clustered-table.qza \
+            --o-clustered-sequences clustered-rep-seqs.qza
         """
 }
