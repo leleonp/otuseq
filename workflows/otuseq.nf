@@ -88,10 +88,10 @@ workflow OTUSEQ {
         TAXONOMY_CLASSIFICATION(VSEARCH_MERGE.out.final_rep_seqs, params.ref_database)
 
         //Merge taxonomy
-        MERGE_TAXONOMY(TAXONOMY_CLASSIFICATION.out.collect())
+        // MERGE_TAXONOMY(TAXONOMY_CLASSIFICATION.out.coll)
 
         // Filter Unwanted Taxa
-        FILTER_TAXA(VSEARCH_MERGE.out.final_table, MERGE_TAXONOMY.out)
+        FILTER_TAXA(VSEARCH_MERGE.out.final_table, TAXONOMY_CLASSIFICATION.out.classification)
 
         Channel
             .of(2, 3, 4, 5, 6, 7)
