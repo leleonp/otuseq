@@ -15,7 +15,11 @@ include { VSEARCH_MERGE             } from '../modules/vsearch_merge'
 include { TAXONOMY_CLASSIFICATION   } from '../modules/taxonomy_classification'
 include { FILTER_TAXA               } from '../modules/filter_taxa'
 include { ABUNDANCE_TABLES          } from '../modules/abundance_tables'
-// include { PHYLOGENETIC_TREE         } from '../modules/phylogenetic_tree'
+include { TRAIN_CLASSIFIER          } from '../modules/train_classifier'
+include { TRIMMING_CLASSIFIER       } from '../modules/trimming_classifier'
+include { MERGE_TAXONOMY            } from '../modules/merge_taxonomy'
+
+include { PHYLOGENETIC_TREE         } from '../modules/phylogenetic_tree'
 //include { CONVERT_TO_PHYLOSEQ       } from '../modules/convert_to_phyloseq'
 
 
@@ -36,6 +40,8 @@ workflow OTUSEQ {
         samples // channel: samplesheet read in from --input
 
     main:
+        // TRAIN_CLASSIFIER()
+        // TRIMMING_CLASSIFIER(TRAIN_CLASSIFIER.out.classifier)
         REMOVE_HOMOPOLYMERS(samples)
         forw_reads = REMOVE_HOMOPOLYMERS.out.forw_read.map { file ->
             def nameParts = file.name.tokenize('_')
@@ -76,14 +82,16 @@ workflow OTUSEQ {
         VSEARCH_CLUSTER(VSEARCH_DEREPLICATE.out.derep_table, VSEARCH_DEREPLICATE.out.derep_rep_seqs)
 
         // Perform taxonomic classification on individual sequences
-        TAXONOMY_CLASSIFICATION(VSEARCH_CLUSTER.out.clustered_rep_seqs, params.ref_database)
+        TAXONOMY_CLASSIFICATION(VSEARCH_CLUSTER.out.clustered_rep_seqs, TRIMMING_CLASSIFIER.out.trimmed_classifier)
 
         // Now perform the merge
         VSEARCH_MERGE(VSEARCH_CLUSTER.out.clustered_table.collect(), VSEARCH_CLUSTER.out.clustered_rep_seqs.collect())
 
+        //Merge taxonomy
+        MERGE_TAXONOMY(TAXONOMY_CLASSIFICATION.out.collect())
 
         // Filter Unwanted Taxa
-        FILTER_TAXA(VSEARCH_MERGE.out.final_table, TAXONOMY_CLASSIFICATION.out)
+        FILTER_TAXA(VSEARCH_MERGE.out.final_table, MERGE_TAXONOMY.out)
 
         Channel
             .of(2, 3, 4, 5, 6, 7)
@@ -94,7 +102,7 @@ workflow OTUSEQ {
         ABUNDANCE_TABLES(abundance_table_input)
 
         // Phylogenetic Tree
-        // PHYLOGENETIC_TREE(VSEARCH_MERGE.out.final_rep_seqs)
+        PHYLOGENETIC_TREE(VSEARCH_MERGE.out.final_rep_seqs)
 
     // CONVERT_TO_PHYLOSEQ(
     //     FILTER_TAXA.out,
