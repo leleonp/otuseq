@@ -75,7 +75,7 @@ workflow OTUSEQ {
         }
 
         // QIIME2 Import
-        QIIME2_IMPORT(trimmed_reads)
+        QIIME2_IMPORT(trimmed_reads.collect())
 
         // VSEARCH steps
         VSEARCH_DEREPLICATE(QIIME2_IMPORT.out)
