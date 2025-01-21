@@ -51,7 +51,7 @@ workflow PIPELINE_INITALIZATION {
             .fromPath(params.input)
             .splitCsv(header:true, sep:',')
             .map { row -> tuple(row.sample_id, file(row.forward), file(row.reverse)) }
-        excluded_taxa = Channel.fromPath(params.excluded_taxa).first()
+        excluded_taxa =  params.excluded_taxa
         forward_primer = params.forward_primer
         reverse_primer = params.reverse_primer
 
