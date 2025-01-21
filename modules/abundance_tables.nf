@@ -3,7 +3,7 @@ process ABUNDANCE_TABLES {
     label 'process_low'
 
     input:
-        tuple val(level), path(filtered_table)
+        tuple val(level), path(filtered_table), path(taxonomy)
 
     output:
         path "level-${level}-table.qza"
@@ -13,6 +13,7 @@ process ABUNDANCE_TABLES {
         """
         qiime taxa collapse \
             --i-table $filtered_table \
+            --i-taxonomy $taxonomy \
             --p-level $level \
             --o-collapsed-table level-${level}-table.qza
         qiime tools export \

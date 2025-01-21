@@ -96,6 +96,7 @@ workflow OTUSEQ {
         Channel
             .of(2, 3, 4, 5, 6, 7)
             .combine(FILTER_TAXA.out)
+            .combine(TAXONOMY_CLASSIFICATION.out.classification)
             .set { abundance_table_input }
 
         // Generate Abundance Tables
