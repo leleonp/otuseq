@@ -89,7 +89,7 @@ workflow OTUSEQ {
         // MERGE_TAXONOMY(TAXONOMY_CLASSIFICATION.out.coll)
 
         // Filter Unwanted Taxa
-        FILTER_TAXA(VSEARCH_MERGE.out.final_table, 
+        FILTER_TAXA(VSEARCH_CLUSTER.out.clustered_table, 
                     TAXONOMY_CLASSIFICATION.out.classification,
                     excluded_taxa)
 
