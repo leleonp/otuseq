@@ -1,5 +1,4 @@
 process VSEARCH_CLUSTER {
-    publishDir "${params.outdir}/clustered", mode: 'copy'
     container 'public.ecr.aws/b1n7j4p9/qiime2:2023.2'
     label 'process_low'
 
@@ -16,7 +15,7 @@ process VSEARCH_CLUSTER {
         qiime vsearch cluster-features-de-novo \
             --i-table $derep_table \
             --i-sequences $derep_rep_seqs \
-            --p-perc-identity ${params.perc_identity} \
+            --p-perc-identity 0.97 \
             --o-clustered-table clustered-table.qza \
             --o-clustered-sequences clustered-rep-seqs.qza
         """

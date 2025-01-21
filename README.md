@@ -14,6 +14,14 @@
 
 ## Introduction
 
+
+
+::: warning
+This is a warning
+:::
+
+
+
 **leleonp/template** is a bioinformatics pipeline that ...
 
 <!-- TODO nf-core:

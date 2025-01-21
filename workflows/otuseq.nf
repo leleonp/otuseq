@@ -29,15 +29,12 @@ include { PHYLOGENETIC_TREE         } from '../modules/phylogenetic_tree'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+
 workflow OTUSEQ {
-
-    samples = Channel
-        .fromPath(params.input)
-        .splitCsv(header:true, sep:',')
-        .map { row -> tuple(row.sample_id, file(row.forward), file(row.reverse)) }
-
     take:
         samples // channel: samplesheet read in from --input
+        database
+        excluded_taxa
 
     main:
         // TRAIN_CLASSIFIER()
@@ -82,13 +79,15 @@ workflow OTUSEQ {
         VSEARCH_CLUSTER(VSEARCH_DEREPLICATE.out.derep_table, VSEARCH_DEREPLICATE.out.derep_rep_seqs)
 
         // Perform taxonomic classification on individual sequences
-        TAXONOMY_CLASSIFICATION(VSEARCH_CLUSTER.out.clustered-rep-seqs.qza, params.ref_database)
+        TAXONOMY_CLASSIFICATION(VSEARCH_CLUSTER.out.clustered_rep_seqs, database)
 
         //Merge taxonomy
         // MERGE_TAXONOMY(TAXONOMY_CLASSIFICATION.out.coll)
 
         // Filter Unwanted Taxa
-        FILTER_TAXA(VSEARCH_MERGE.out.final_table, TAXONOMY_CLASSIFICATION.out.classification)
+        FILTER_TAXA(VSEARCH_MERGE.out.final_table, 
+                    TAXONOMY_CLASSIFICATION.out.classification,
+                    excluded_taxa)
 
         Channel
             .of(2, 3, 4, 5, 6, 7)
@@ -99,7 +98,7 @@ workflow OTUSEQ {
         ABUNDANCE_TABLES(abundance_table_input)
 
         // Phylogenetic Tree
-        PHYLOGENETIC_TREE(VSEARCH_CLUSTER.out.clustered-rep-seqs.qza)
+        PHYLOGENETIC_TREE(VSEARCH_CLUSTER.out.clustered_rep_seqs)
 
     // CONVERT_TO_PHYLOSEQ(
     //     FILTER_TAXA.out,

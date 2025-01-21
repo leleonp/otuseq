@@ -1,6 +1,5 @@
 process FASTQC {
     tag "FASTQC on $sample_id"
-    publishDir "${params.outdir}/fastqc", mode: 'copy'
     container 'public.ecr.aws/biocontainers/fastqc:0.12.1--hdfd78af_0'
     label 'process_low'
 

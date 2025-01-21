@@ -1,5 +1,4 @@
 process TAXONOMY_CLASSIFICATION {
-    publishDir "${params.outdir}/taxonomy", mode: 'copy'
     container 'public.ecr.aws/b1n7j4p9/qiime2:2023.2'
     label 'process_medium'
     label 'error_retry'
@@ -9,7 +8,7 @@ process TAXONOMY_CLASSIFICATION {
     path ref_database
 
     output:
-    path "${rep_seqs.simpleName}_taxonomy.qza"
+    path "${rep_seqs.simpleName}_taxonomy.qza", emit: classification
 
     script:
     """

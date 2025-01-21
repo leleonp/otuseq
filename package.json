@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "i": "^0.3.7",
+    "markdown-it-emoji": "^3.0.0"
+  }
+}

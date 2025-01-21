@@ -43,15 +43,26 @@ include { OTUSEQ  } from './workflows/otuseq'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow {
 
-    main:
+
+workflow {
+    samples = Channel
+        .fromPath(params.input)
+        .splitCsv(header:true, sep:',')
+        .map { row -> tuple(row.sample_id, file(row.forward), file(row.reverse)) }
+
+    reference = Channel
+        .fromPath(params.ref_database)
 
     //
     // WORKFLOW: Run main workflow
     //
     OTUSEQ (
-        params.input
+        samples,
+        reference,
+        params.excluded_taxa,
+        params.forward_primer,
+        params.reverse_primer
     )
 }
 
