@@ -32,9 +32,11 @@ include { PHYLOGENETIC_TREE         } from '../modules/phylogenetic_tree'
 
 workflow OTUSEQ {
     take:
-        samples // channel: samplesheet read in from --input
+        samples
         database
         excluded_taxa
+        forward_primer
+        reverse_primer
 
     main:
         // TRAIN_CLASSIFIER()
@@ -57,7 +59,9 @@ workflow OTUSEQ {
         FASTQC(samples)
 
         // Primer Trimming
-        CUTADAPT(filt_reads)
+        CUTADAPT(filt_reads,
+                forward_primer,
+                reverse_primer)    
 
         // MultiQC Report
         multiqc_ch = FASTQC.out.mix(CUTADAPT.out.logs)
