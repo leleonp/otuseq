@@ -1,6 +1,6 @@
 process CUTADAPT {
     tag "Cutadapt on $sample_id"
-    container 'public.ecr.aws/biocontainers/cutadapt:4.9--py310h1fe012e_3'
+    container 'community.wave.seqera.io/library/cutadapt:4.9--6438e6d7a026e467'
     label 'process_low'
 
     input:
