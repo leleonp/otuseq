@@ -1,6 +1,7 @@
 process RAREFACTION {
     tag "Generating rarefaction curves"
-    container 'public.ecr.aws/b1n7j4p9/qiime2:2023.2'
+    container "community.wave.seqera.io/library/biom-format_qiime2:2023.2--b62e4e59f6c73dda"
+    conda 'bioconda::qiime2 bioconda::biom-format conda-forge::numpy'
     label 'process_medium'
     publishDir "${params.outdir}/rarefaction", mode: 'copy'
 
