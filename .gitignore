@@ -1,0 +1,55 @@
+# Nextflow
+.nextflow*
+work/
+results/
+pipeline_info/
+
+# Node.js (no necesario para este pipeline)
+node_modules/
+package-lock.json
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Logs
+*.log
+
+# Temporary files
+*.bak
+*.backup
+.tmp/
+tmp/
+
+# Quarto
+.quarto/
+*_cache/
+*_files/
+
+# Test data (uncomment if needed)
+# test_data/
+# data/
