@@ -16,6 +16,7 @@ process ABUNDANCE_TABLES {
             --i-taxonomy $taxonomy \
             --p-level $level \
             --o-collapsed-table level-${level}-table.qza
+            
         qiime tools export \
             --input-path level-${level}-table.qza \
             --output-path level-${level}

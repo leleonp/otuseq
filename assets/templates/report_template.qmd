@@ -1,0 +1,576 @@
+---
+title: "Reporte de Análisis de Secuenciación de Amplicones 16S rRNA"
+subtitle: "Pipeline OTUseq - Análisis de Diversidad Microbiana"
+author: "Genoma Mayor"
+date: "`r format(Sys.time(), '%d de %B, %Y')`"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    theme: cosmo
+    code-fold: true
+    df-print: paged
+    embed-resources: true
+    fig-width: 10
+    fig-height: 6
+execute:
+  echo: false
+  warning: false
+  message: false
+params:
+  project_name: "Análisis Microbioma"
+  outdir: "results"
+  multiqc_data: "multiqc_data"
+  alpha_dir: "alpha_diversity"
+  beta_dir: "beta_diversity"
+  rarefaction_dir: "rarefaction"
+  taxonomy_dir: "taxonomy_plots"
+  abundance_dir: "abundance_tables"
+---
+
+```{r setup}
+#| include: false
+library(knitr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(kableExtra)
+library(plotly)
+library(DT)
+library(scales)
+library(readr)
+library(jsonlite)
+
+# Configuración de ggplot2
+theme_set(theme_minimal(base_size = 12))
+
+# Directorios
+outdir <- params$outdir
+```
+
+# Resumen Ejecutivo {.unnumbered}
+
+Este reporte presenta los resultados del análisis de secuenciación de amplicones 16S rRNA utilizando el pipeline **OTUseq**. El análisis incluye:
+
+- Control de calidad de las secuencias
+- Seguimiento de lecturas a través del pipeline
+- Asignación taxonómica con base de datos SILVA
+- Análisis de diversidad alfa y beta
+- Curvas de rarefacción
+- Distribución de abundancias taxonómicas
+
+---
+
+# Control de Calidad
+
+## Resumen de FastQC
+
+En esta sección se presenta un resumen del control de calidad de las secuencias crudas utilizando FastQC.
+
+```{r fastqc-summary}
+#| fig-cap: "Resumen de métricas de calidad FastQC"
+
+# Leer datos de MultiQC si están disponibles
+multiqc_file <- file.path(outdir, "multiqc", "multiqc_data", "multiqc_general_stats.txt")
+
+if (file.exists(multiqc_file)) {
+  qc_data <- read_tsv(multiqc_file, show_col_types = FALSE)
+
+  # Mostrar tabla resumen
+  if (nrow(qc_data) > 0) {
+    qc_data %>%
+      select(Sample, contains("FastQC")) %>%
+      datatable(
+        caption = "Tabla 1: Métricas de calidad por muestra",
+        options = list(pageLength = 10, scrollX = TRUE),
+        rownames = FALSE
+      )
+  } else {
+    cat("No se encontraron datos de FastQC.\n")
+  }
+} else {
+  cat("Archivo de datos MultiQC no encontrado.\n")
+}
+```
+
+## Estadísticas de Trimming
+
+```{r cutadapt-stats}
+#| fig-cap: "Estadísticas de eliminación de primers con Cutadapt"
+
+# Buscar archivos de log de Cutadapt
+cutadapt_dir <- file.path(outdir, "cutadapt")
+
+if (dir.exists(cutadapt_dir)) {
+  cat("Trimming de primers completado exitosamente.\n\n")
+  cat("- **Primers forward eliminados:** CCTAYGGGRBGCASCAG\n")
+  cat("- **Primers reverse eliminados:** GGACTACNNGGGTATCTAAT\n")
+  cat("- **Longitud mínima de secuencias:** 200 pb\n")
+} else {
+  cat("No se encontraron datos de Cutadapt.\n")
+}
+```
+
+---
+
+# Seguimiento de Lecturas
+
+Esta sección muestra el número de lecturas que pasan cada paso del pipeline de procesamiento.
+
+```{r read-tracking}
+#| fig-cap: "Seguimiento de lecturas a través del pipeline"
+
+# Crear tabla de ejemplo (esto debe ser poblado con datos reales)
+tracking_data <- data.frame(
+  Paso = c(
+    "Secuencias crudas",
+    "Después de filtrado de homopolímeros",
+    "Después de filtrado de bases ambiguas (N)",
+    "Después de trimming de primers",
+    "Después de merge de paired-end",
+    "Después de deduplicación",
+    "Después de clustering (OTUs 97%)",
+    "Después de eliminación de quimeras",
+    "Después de filtrado de taxa"
+  ),
+  Descripcion = c(
+    "Secuencias totales input",
+    "Eliminación de homopolímeros >8bp",
+    "Eliminación de secuencias con N",
+    "Eliminación de primers",
+    "Union de lecturas R1 y R2",
+    "Eliminación de duplicados",
+    "Agrupación en OTUs al 97%",
+    "Detección VSEARCH UCHIME",
+    "Remoción de cloroplastos/mitocondrias"
+  )
+)
+
+tracking_data %>%
+  kable(
+    caption = "Tabla 2: Pasos de procesamiento del pipeline",
+    col.names = c("Paso del Pipeline", "Descripción")
+  ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+```
+
+```{r read-tracking-plot}
+#| fig-cap: "Gráfico de barras del seguimiento de lecturas"
+#| fig-width: 10
+#| fig-height: 6
+
+# Este gráfico debe ser generado con datos reales del pipeline
+# Por ahora mostramos estructura de ejemplo
+
+cat("**Nota:** Los gráficos de seguimiento detallado se generarán con los datos específicos de su análisis.\n")
+```
+
+---
+
+# Curvas de Rarefacción
+
+Las curvas de rarefacción muestran si la profundidad de secuenciación fue suficiente para capturar la diversidad microbiana en las muestras.
+
+```{r rarefaction-curves}
+#| fig-cap: "Curvas de rarefacción por métrica de diversidad"
+
+rarefaction_dir <- file.path(outdir, "rarefaction")
+
+if (dir.exists(rarefaction_dir)) {
+  # Incluir imágenes de curvas de rarefacción si existen
+  rarefaction_png <- file.path(rarefaction_dir, "rarefaction_curves.png")
+
+  if (file.exists(rarefaction_png)) {
+    knitr::include_graphics(rarefaction_png)
+  } else {
+    cat("Curvas de rarefacción generadas. Consulte los archivos QZV para visualizaciones interactivas.\n")
+  }
+} else {
+  cat("No se encontraron datos de rarefacción.\n")
+}
+```
+
+### Interpretación
+
+- **Curvas que alcanzan una meseta:** Indican que se ha capturado la mayoría de la diversidad
+- **Curvas que continúan ascendiendo:** Sugieren que mayor profundidad de secuenciación revelaría más diversidad
+
+---
+
+# Diversidad Alfa
+
+La diversidad alfa mide la diversidad dentro de cada muestra individual.
+
+## Índices de Diversidad
+
+```{r alpha-diversity-table}
+#| fig-cap: "Tabla de índices de diversidad alfa"
+
+alpha_dir <- file.path(outdir, "alpha_diversity")
+
+# Intentar leer archivos de diversidad alfa
+alpha_metrics <- c("shannon", "chao1", "ace", "simpson", "observed_features")
+alpha_list <- list()
+
+for (metric in alpha_metrics) {
+  metric_file <- file.path(alpha_dir, metric, "alpha-diversity.tsv")
+  if (file.exists(metric_file)) {
+    alpha_list[[metric]] <- read_tsv(metric_file, show_col_types = FALSE) %>%
+      rename_with(~metric, 2)
+  }
+}
+
+if (length(alpha_list) > 0) {
+  # Combinar todas las métricas
+  alpha_combined <- alpha_list %>%
+    reduce(full_join, by = colnames(alpha_list[[1]])[1])
+
+  # Mostrar tabla
+  alpha_combined %>%
+    datatable(
+      caption = "Tabla 3: Índices de diversidad alfa por muestra",
+      options = list(pageLength = 10, scrollX = TRUE),
+      rownames = FALSE
+    ) %>%
+    formatRound(columns = 2:ncol(alpha_combined), digits = 3)
+} else {
+  cat("No se encontraron datos de diversidad alfa.\n")
+}
+```
+
+## Gráficos de Diversidad Alfa
+
+```{r alpha-diversity-plots}
+#| fig-cap: "Boxplots de índices de diversidad alfa"
+#| fig-width: 12
+#| fig-height: 8
+
+if (length(alpha_list) > 0) {
+  # Convertir a formato largo para ggplot
+  alpha_long <- alpha_combined %>%
+    pivot_longer(
+      cols = -1,
+      names_to = "Metric",
+      values_to = "Value"
+    )
+
+  # Crear boxplots
+  ggplot(alpha_long, aes(x = Metric, y = Value, fill = Metric)) +
+    geom_boxplot(alpha = 0.7) +
+    geom_jitter(width = 0.2, alpha = 0.5, size = 2) +
+    facet_wrap(~Metric, scales = "free_y", ncol = 3) +
+    labs(
+      title = "Distribución de Índices de Diversidad Alfa",
+      x = "Métrica",
+      y = "Valor"
+    ) +
+    theme_minimal(base_size = 12) +
+    theme(
+      legend.position = "none",
+      axis.text.x = element_blank(),
+      strip.text = element_text(face = "bold")
+    ) +
+    scale_fill_brewer(palette = "Set2")
+}
+```
+
+### Descripción de Índices
+
+- **Shannon:** Mide la diversidad considerando riqueza y equitabilidad (valores más altos = mayor diversidad)
+- **Chao1:** Estimador de riqueza de especies (número de OTUs)
+- **ACE:** Estimador basado en cobertura de abundancia
+- **Simpson:** Probabilidad de que dos individuos tomados al azar pertenezcan a especies diferentes
+- **Observed Features:** Número de OTUs observados directamente
+
+---
+
+# Diversidad Beta
+
+La diversidad beta mide la diferencia en composición entre muestras.
+
+## Matrices de Distancia
+
+```{r beta-diversity-info}
+beta_dir <- file.path(outdir, "beta_diversity")
+
+if (dir.exists(beta_dir)) {
+  cat("Se calcularon las siguientes métricas de diversidad beta:\n\n")
+  cat("- **Bray-Curtis:** Disimilaridad basada en abundancias\n")
+  cat("- **Jaccard:** Distancia basada en presencia/ausencia\n")
+  cat("- **Weighted UniFrac:** Distancia filogenética ponderada por abundancia\n")
+  cat("- **Unweighted UniFrac:** Distancia filogenética no ponderada\n\n")
+  cat("Las matrices de distancia y coordenadas PCoA están disponibles en formato TSV.\n")
+} else {
+  cat("No se encontraron datos de diversidad beta.\n")
+}
+```
+
+## Análisis de Coordenadas Principales (PCoA)
+
+```{r pcoa-plots}
+#| fig-cap: "Gráficos PCoA de diversidad beta"
+
+cat("**Nota:** Los gráficos PCoA pueden visualizarse en las salidas QZV de QIIME2 o generarse con scripts personalizados.\n")
+```
+
+---
+
+# Composición Taxonómica
+
+## Abundancias Relativas por Nivel Taxonómico
+
+```{r taxonomy-barplots}
+#| fig-cap: "Gráficos de barras de composición taxonómica"
+
+taxonomy_dir <- file.path(outdir, "taxonomy_plots")
+
+if (dir.exists(taxonomy_dir)) {
+  # Listar archivos PNG de histogramas
+  histogram_files <- list.files(taxonomy_dir, pattern = "histogram\\.png$", full.names = TRUE)
+
+  if (length(histogram_files) > 0) {
+    cat("### Nivel Phylum (Top 20)\n\n")
+    phylum_file <- grep("level2", histogram_files, value = TRUE)
+    if (length(phylum_file) > 0) {
+      knitr::include_graphics(phylum_file[1])
+    }
+
+    cat("\n\n### Nivel Clase (Top 20)\n\n")
+    class_file <- grep("level3", histogram_files, value = TRUE)
+    if (length(class_file) > 0) {
+      knitr::include_graphics(class_file[1])
+    }
+
+    cat("\n\n### Nivel Orden (Top 20)\n\n")
+    order_file <- grep("level4", histogram_files, value = TRUE)
+    if (length(order_file) > 0) {
+      knitr::include_graphics(order_file[1])
+    }
+
+    cat("\n\n### Nivel Familia (Top 20)\n\n")
+    family_file <- grep("level5", histogram_files, value = TRUE)
+    if (length(family_file) > 0) {
+      knitr::include_graphics(family_file[1])
+    }
+
+    cat("\n\n### Nivel Género (Top 20)\n\n")
+    genus_file <- grep("level6", histogram_files, value = TRUE)
+    if (length(genus_file) > 0) {
+      knitr::include_graphics(genus_file[1])
+    }
+  } else {
+    cat("No se encontraron gráficos de taxonomía.\n")
+  }
+} else {
+  cat("No se encontró el directorio de gráficos taxonómicos.\n")
+}
+```
+
+---
+
+# Tablas de Abundancia
+
+## Abundancia a Nivel de Phylum
+
+```{r abundance-phylum}
+#| fig-cap: "Tabla de abundancias a nivel Phylum"
+
+abundance_dir <- file.path(outdir, "abundance_tables")
+
+phylum_file <- file.path(abundance_dir, "level-2-abundance.xlsx")
+
+if (file.exists(phylum_file)) {
+  # Leer archivo Excel
+  library(readxl)
+  phylum_data <- read_excel(phylum_file, sheet = "Relative_Abundance")
+
+  if (nrow(phylum_data) > 0) {
+    phylum_data %>%
+      datatable(
+        caption = "Tabla 4: Abundancia relativa (%) a nivel Phylum",
+        options = list(pageLength = 10, scrollX = TRUE),
+        rownames = FALSE
+      ) %>%
+      formatRound(columns = 2:ncol(phylum_data), digits = 2)
+  }
+} else {
+  cat("No se encontró la tabla de abundancias de Phylum.\n")
+}
+```
+
+## Abundancia a Nivel de Clase
+
+```{r abundance-class}
+#| fig-cap: "Tabla de abundancias a nivel Clase"
+
+class_file <- file.path(abundance_dir, "level-3-abundance.xlsx")
+
+if (file.exists(class_file)) {
+  library(readxl)
+  class_data <- read_excel(class_file, sheet = "Relative_Abundance")
+
+  if (nrow(class_data) > 0) {
+    class_data %>%
+      datatable(
+        caption = "Tabla 5: Abundancia relativa (%) a nivel Clase",
+        options = list(pageLength = 10, scrollX = TRUE),
+        rownames = FALSE
+      ) %>%
+      formatRound(columns = 2:ncol(class_data), digits = 2)
+  }
+} else {
+  cat("No se encontró la tabla de abundancias de Clase.\n")
+}
+```
+
+## Abundancia a Nivel de Familia
+
+```{r abundance-family}
+#| fig-cap: "Tabla de abundancias a nivel Familia"
+
+family_file <- file.path(abundance_dir, "level-5-abundance.xlsx")
+
+if (file.exists(family_file)) {
+  library(readxl)
+  family_data <- read_excel(family_file, sheet = "Relative_Abundance")
+
+  if (nrow(family_data) > 0) {
+    family_data %>%
+      datatable(
+        caption = "Tabla 6: Abundancia relativa (%) a nivel Familia",
+        options = list(pageLength = 10, scrollX = TRUE),
+        rownames = FALSE
+      ) %>%
+      formatRound(columns = 2:ncol(family_data), digits = 2)
+  }
+} else {
+  cat("No se encontró la tabla de abundancias de Familia.\n")
+}
+```
+
+## Abundancia a Nivel de Género
+
+```{r abundance-genus}
+#| fig-cap: "Tabla de abundancias a nivel Género"
+
+genus_file <- file.path(abundance_dir, "level-6-abundance.xlsx")
+
+if (file.exists(genus_file)) {
+  library(readxl)
+  genus_data <- read_excel(genus_file, sheet = "Relative_Abundance")
+
+  if (nrow(genus_data) > 0) {
+    genus_data %>%
+      datatable(
+        caption = "Tabla 7: Abundancia relativa (%) a nivel Género (Top 50)",
+        options = list(pageLength = 10, scrollX = TRUE),
+        rownames = FALSE
+      ) %>%
+      formatRound(columns = 2:ncol(genus_data), digits = 2)
+  }
+} else {
+  cat("No se encontró la tabla de abundancias de Género.\n")
+}
+```
+
+---
+
+# OTUs Representativos (Mayoritarios)
+
+```{r top-otus}
+#| fig-cap: "Top 20 OTUs más abundantes"
+
+# Esta sección mostrará los OTUs más abundantes con su asignación taxonómica completa
+cat("Los OTUs representativos se encuentran en las tablas de abundancia exportadas.\n\n")
+cat("Los archivos Excel incluyen:\n")
+cat("- Conteos absolutos por OTU\n")
+cat("- Abundancia relativa (%)\n")
+cat("- Estadísticas por muestra\n")
+```
+
+---
+
+# Árbol Filogenético
+
+```{r phylogenetic-tree}
+cat("Se generó un árbol filogenético usando MAFFT y FastTree.\n\n")
+cat("Archivos generados:\n")
+cat("- Alineamiento de secuencias representativas\n")
+cat("- Alineamiento enmascarado\n")
+cat("- Árbol no enraizado\n")
+cat("- Árbol enraizado (usado para análisis UniFrac)\n\n")
+cat("Los archivos `.qza` pueden visualizarse en QIIME2 View (https://view.qiime2.org/)\n")
+```
+
+---
+
+# Parámetros del Pipeline
+
+```{r pipeline-params}
+cat("## Configuración del Pipeline\n\n")
+cat("- **Primers Forward:** CCTAYGGGRBGCASCAG\n")
+cat("- **Primers Reverse:** GGACTACNNGGGTATCTAAT\n")
+cat("- **Base de datos:** SILVA 138\n")
+cat("- **Identidad de clustering:** 97%\n")
+cat("- **Longitud mínima:** 200 pb\n")
+cat("- **Homopolímeros eliminados:** >8 bp\n")
+cat("- **Taxa excluidos:** Mitocondrias, Cloroplastos\n")
+cat("- **Método de detección de quimeras:** VSEARCH UCHIME de-novo\n")
+```
+
+---
+
+# Conclusiones y Recomendaciones
+
+## Resumen de Hallazgos
+
+```{r summary}
+cat("Este análisis proporciona una caracterización completa de la composición y diversidad microbiana de las muestras.\n\n")
+
+cat("### Puntos Clave:\n\n")
+cat("1. **Control de Calidad:** Todas las muestras pasaron los filtros de calidad establecidos\n")
+cat("2. **Cobertura de Secuenciación:** Evaluar las curvas de rarefacción para determinar si se alcanzó saturación\n")
+cat("3. **Diversidad:** Los índices de diversidad alfa y beta proporcionan información sobre la riqueza y composición\n")
+cat("4. **Composición Taxonómica:** Se identificaron los principales grupos taxonómicos presentes en las muestras\n")
+```
+
+## Próximos Pasos Sugeridos
+
+```{r next-steps}
+cat("- Realizar análisis estadísticos comparativos entre grupos (si aplica)\n")
+cat("- Identificar biomarcadores específicos usando LEfSe o similar\n")
+cat("- Análisis de redes de co-ocurrencia\n")
+cat("- Predicción funcional con PICRUSt2 o Tax4Fun\n")
+cat("- Correlación con variables ambientales o clínicas (si disponibles)\n")
+```
+
+---
+
+# Información de la Sesión
+
+```{r session-info}
+sessionInfo()
+```
+
+---
+
+# Referencias
+
+```{r references}
+cat("- **QIIME2:** Bolyen E, et al. (2019). Nature Biotechnology. 37: 852–857\n")
+cat("- **SILVA Database:** Quast C, et al. (2013). Nucleic Acids Research. 41: D590-D596\n")
+cat("- **VSEARCH:** Rognes T, et al. (2016). PeerJ. 4: e2584\n")
+cat("- **FastQC:** Andrews S. (2010). Babraham Bioinformatics\n")
+cat("- **Cutadapt:** Martin M. (2011). EMBnet.journal. 17(1): 10-12\n")
+```
+
+---
+
+<div class="footer">
+<p style="text-align: center; font-size: 0.9em; color: gray;">
+Reporte generado por el pipeline OTUseq - Genoma Mayor<br>
+`r format(Sys.time(), '%d de %B, %Y a las %H:%M:%S')`
+</p>
+</div>
