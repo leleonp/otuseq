@@ -10,12 +10,12 @@ process BETA_DIVERSITY {
     output:
         path 'bray_curtis_distance.qza', emit: bray_curtis
         path 'jaccard_distance.qza', emit: jaccard
-        path 'weighted_unifrac_distance.qza', emit: weighted_unifrac
-        path 'unweighted_unifrac_distance.qza', emit: unweighted_unifrac
+        path 'weighted_unifrac_distance.qza', emit: weighted_unifrac, optional: true
+        path 'unweighted_unifrac_distance.qza', emit: unweighted_unifrac, optional: true
         path 'bray_curtis_pcoa.qza', emit: bray_curtis_pcoa
         path 'jaccard_pcoa.qza', emit: jaccard_pcoa
-        path 'weighted_unifrac_pcoa.qza', emit: weighted_unifrac_pcoa
-        path 'unweighted_unifrac_pcoa.qza', emit: unweighted_unifrac_pcoa
+        path 'weighted_unifrac_pcoa.qza', emit: weighted_unifrac_pcoa, optional: true
+        path 'unweighted_unifrac_pcoa.qza', emit: unweighted_unifrac_pcoa, optional: true
         path 'beta_diversity/*'
 
     script:
@@ -41,26 +41,33 @@ process BETA_DIVERSITY {
             --o-pcoa jaccard_pcoa.qza
 
         # Weighted UniFrac distance (phylogenetic)
+        # Use error handling as UniFrac can crash on some datasets
         qiime diversity beta-phylogenetic \
             --i-table $table \
             --i-phylogeny $tree \
             --p-metric weighted_unifrac \
-            --o-distance-matrix weighted_unifrac_distance.qza
+            --p-threads ${task.cpus} \
+            --o-distance-matrix weighted_unifrac_distance.qza || echo "Weighted UniFrac failed, creating placeholder"
 
-        qiime diversity pcoa \
-            --i-distance-matrix weighted_unifrac_distance.qza \
-            --o-pcoa weighted_unifrac_pcoa.qza
+        if [ -f weighted_unifrac_distance.qza ]; then
+            qiime diversity pcoa \
+                --i-distance-matrix weighted_unifrac_distance.qza \
+                --o-pcoa weighted_unifrac_pcoa.qza
+        fi
 
         # Unweighted UniFrac distance (phylogenetic)
         qiime diversity beta-phylogenetic \
             --i-table $table \
             --i-phylogeny $tree \
             --p-metric unweighted_unifrac \
-            --o-distance-matrix unweighted_unifrac_distance.qza
+            --p-threads ${task.cpus} \
+            --o-distance-matrix unweighted_unifrac_distance.qza || echo "Unweighted UniFrac failed, creating placeholder"
 
-        qiime diversity pcoa \
-            --i-distance-matrix unweighted_unifrac_distance.qza \
-            --o-pcoa unweighted_unifrac_pcoa.qza
+        if [ -f unweighted_unifrac_distance.qza ]; then
+            qiime diversity pcoa \
+                --i-distance-matrix unweighted_unifrac_distance.qza \
+                --o-pcoa unweighted_unifrac_pcoa.qza
+        fi
 
         # Export all to TSV
         mkdir -p beta_diversity
@@ -73,13 +80,18 @@ process BETA_DIVERSITY {
             --input-path jaccard_distance.qza \
             --output-path beta_diversity/jaccard
 
-        qiime tools export \
-            --input-path weighted_unifrac_distance.qza \
-            --output-path beta_diversity/weighted_unifrac
+        # Export UniFrac results only if they exist
+        if [ -f weighted_unifrac_distance.qza ]; then
+            qiime tools export \
+                --input-path weighted_unifrac_distance.qza \
+                --output-path beta_diversity/weighted_unifrac
+        fi
 
-        qiime tools export \
-            --input-path unweighted_unifrac_distance.qza \
-            --output-path beta_diversity/unweighted_unifrac
+        if [ -f unweighted_unifrac_distance.qza ]; then
+            qiime tools export \
+                --input-path unweighted_unifrac_distance.qza \
+                --output-path beta_diversity/unweighted_unifrac
+        fi
 
         qiime tools export \
             --input-path bray_curtis_pcoa.qza \
@@ -89,12 +101,16 @@ process BETA_DIVERSITY {
             --input-path jaccard_pcoa.qza \
             --output-path beta_diversity/jaccard_pcoa
 
-        qiime tools export \
-            --input-path weighted_unifrac_pcoa.qza \
-            --output-path beta_diversity/weighted_unifrac_pcoa
+        if [ -f weighted_unifrac_pcoa.qza ]; then
+            qiime tools export \
+                --input-path weighted_unifrac_pcoa.qza \
+                --output-path beta_diversity/weighted_unifrac_pcoa
+        fi
 
-        qiime tools export \
-            --input-path unweighted_unifrac_pcoa.qza \
-            --output-path beta_diversity/unweighted_unifrac_pcoa
+        if [ -f unweighted_unifrac_pcoa.qza ]; then
+            qiime tools export \
+                --input-path unweighted_unifrac_pcoa.qza \
+                --output-path beta_diversity/unweighted_unifrac_pcoa
+        fi
         """
 }

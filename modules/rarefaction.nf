@@ -14,17 +14,24 @@ process RAREFACTION {
 
     script:
         """
-        # Determine max depth (use median frequency)
-        MAX_DEPTH=\$(qiime tools export \
+        # Export table to calculate max depth (suppress qiime output)
+        qiime tools export \
             --input-path $table \
-            --output-path temp_table && \
-            python3 -c "
+            --output-path temp_table > /dev/null 2>&1
+
+        # Calculate median depth
+        MAX_DEPTH=\$(python3 -c "
 import biom
 import numpy as np
 table = biom.load_table('temp_table/feature-table.biom')
 sums = table.sum(axis='sample')
 print(int(np.median(sums)))
-" && rm -rf temp_table)
+")
+
+        # Clean up temp files
+        rm -rf temp_table
+
+        echo "Using max rarefaction depth: \$MAX_DEPTH"
 
         # Generate rarefaction curves
         qiime diversity alpha-rarefaction \

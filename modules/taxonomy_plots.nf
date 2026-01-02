@@ -1,6 +1,6 @@
 process TAXONOMY_PLOTS {
     tag "Generating taxonomy plots for level ${level}"
-    container "community.wave.seqera.io/library/pandas_matplotlib_seaborn_biom-format:latest"
+    container "quay.io/biocontainers/mulled-v2-5d3f49b113a76edda01cd831e89a1c87d7d350da:3ad8ce28b8e5f8bb86e4ce2eaf3897f80bd4a5ef-0"
     label 'process_low'
     publishDir "${params.outdir}/taxonomy_plots", mode: 'copy'
 
