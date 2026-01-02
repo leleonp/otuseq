@@ -1,6 +1,6 @@
 process FASTQC {
     tag "FASTQC on $sample_id"
-    container 'public.ecr.aws/biocontainers/fastqc:0.12.1--hdfd78af_0'
+    container 'quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0'
     label 'process_low'
 
     
