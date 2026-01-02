@@ -16,6 +16,7 @@ process VSEARCH_CLUSTER {
             --i-table $derep_table \
             --i-sequences $derep_rep_seqs \
             --p-perc-identity 0.97 \
+            --p-threads ${task.cpus} \
             --o-clustered-table clustered-table.qza \
             --o-clustered-sequences clustered-rep-seqs.qza
         """

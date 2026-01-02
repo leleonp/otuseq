@@ -20,6 +20,6 @@ process PHYLOGENETIC_TREE {
             --o-masked-alignment masked-aligned-rep-seqs.qza \
             --o-tree unrooted-tree.qza \
             --o-rooted-tree rooted-tree.qza \
-            --p-n-threads auto
+            --p-n-threads ${task.cpus}
         """
 }

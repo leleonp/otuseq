@@ -17,6 +17,7 @@ process CHIMERA_FILTERING {
         qiime vsearch uchime-denovo \
             --i-table $table \
             --i-sequences $rep_seqs \
+            --p-threads ${task.cpus} \
             --o-chimeras chimeras.qza \
             --o-nonchimeras nonchimeric-rep-seqs.qza \
             --o-stats chimera-stats.qza

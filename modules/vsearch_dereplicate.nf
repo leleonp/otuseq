@@ -14,6 +14,7 @@ process VSEARCH_DEREPLICATE {
         # Merge paired-end sequences
         qiime vsearch merge-pairs \
             --i-demultiplexed-seqs $demux_sample_qza \
+            --p-threads ${task.cpus} \
             --o-merged-sequences merged-seqs.qza
 
         qiime vsearch dereplicate-sequences \

@@ -11,7 +11,7 @@ process TRAIN_CLASSIFIER {
     qiime feature-classifier fit-classifier-naive-bayes \
     --i-reference-reads ref-sequences.qza \
     --i-reference-taxonomy ref-taxonomy.qza \
-    --o-classifier classifier.qza
-    --p-n-jobs -2
+    --o-classifier classifier.qza \
+    --p-n-jobs ${task.cpus}
     """
 }

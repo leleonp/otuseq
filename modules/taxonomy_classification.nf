@@ -16,6 +16,6 @@ process TAXONOMY_CLASSIFICATION {
         --i-classifier $ref_database \
         --i-reads $rep_seqs \
         --o-classification ${rep_seqs.simpleName}_taxonomy.qza \
-        --p-n-jobs -2
+        --p-n-jobs ${task.cpus}
     """
 }
