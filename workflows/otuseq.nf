@@ -29,7 +29,8 @@ include { GENERATE_REPORT           } from '../modules/generate_report'
 include { MERGE_TAXONOMY            } from '../modules/merge_taxonomy'
 
 include { PHYLOGENETIC_TREE         } from '../modules/phylogenetic_tree'
-//include { CONVERT_TO_PHYLOSEQ       } from '../modules/convert_to_phyloseq'
+include { PHYLOSEQ_OBJECT           } from '../modules/phyloseq_object'
+include { PHYLOSEQ_ANALYSES         } from '../modules/phyloseq_analyses'
 
 
 /*
@@ -138,21 +139,34 @@ workflow OTUSEQ {
         // Export rarefaction plots
         RAREFACTION_PLOTS(RAREFACTION.out[0])
 
+        // ====================================================================
+        // PHYLOSEQ-BASED ANALYSIS (NEW APPROACH)
+        // ====================================================================
+        // Create phyloseq object from QIIME2 artifacts
+        PHYLOSEQ_OBJECT(
+            FILTER_TAXA.out,                            // filtered table
+            TAXONOMY_CLASSIFICATION.out.classification,  // taxonomy
+            PHYLOGENETIC_TREE.out[3],                   // rooted tree
+            channel.fromPath("${params.input}")         // metadata CSV
+        )
+
+        // Run all analyses from phyloseq object
+        PHYLOSEQ_ANALYSES(PHYLOSEQ_OBJECT.out.rds)
+
         // Generate comprehensive report if requested
         if (params.report) {
-            // Collect all outputs for report
-            report_inputs = Channel.empty()
+            // Collect all outputs for report (using phyloseq outputs)
+            report_inputs = channel.empty()
                 .mix(MULTIQC.out)
-                .mix(ALPHA_DIVERSITY.out[5])
-                .mix(BETA_DIVERSITY.out[8])
-                .mix(RAREFACTION.out[1])
-                .mix(TAXONOMY_PLOTS.out[0])
-                .mix(TAXONOMY_PLOTS.out[1])
-                .mix(EXPORT_TO_EXCEL.out)
+                .mix(PHYLOSEQ_ANALYSES.out.excel)
+                .mix(PHYLOSEQ_ANALYSES.out.plots)
+                .mix(PHYLOSEQ_ANALYSES.out.rarefaction)
+                .mix(PHYLOSEQ_ANALYSES.out.alpha)
+                .mix(PHYLOSEQ_ANALYSES.out.beta)
                 .collect()
 
             // Get report template
-            report_template = Channel.fromPath("${projectDir}/assets/templates/report_template.qmd")
+            report_template = channel.fromPath("${projectDir}/assets/templates/report_template.qmd")
 
             GENERATE_REPORT(
                 report_inputs,
@@ -160,15 +174,10 @@ workflow OTUSEQ {
             )
         }
 
-    // CONVERT_TO_PHYLOSEQ(
-    //     FILTER_TAXA.out,
-    //     TAXONOMY_CLASSIFICATION.out,
-    //     PHYLOGENETIC_TREE.out.rooted_tree,
-    //     params.metadata
-    // )
-
-
-//    emit:
+    emit:
+        phyloseq_rds = PHYLOSEQ_OBJECT.out.rds
+        phyloseq_summary = PHYLOSEQ_OBJECT.out.summary
+        analysis_log = PHYLOSEQ_ANALYSES.out.log
 
 }
 
