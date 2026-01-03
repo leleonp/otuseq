@@ -1,6 +1,6 @@
 process TAXONOMY_PLOTS {
     tag "Generating taxonomy plots for level ${level}"
-    container "community.wave.seqera.io/library/biom-format_matplotlib_pandas_seaborn:latest"
+    container "895739677619.dkr.ecr.us-east-1.amazonaws.com/otuseq-taxonomy-plots:1.0.0"
     conda "bioconda::biom-format conda-forge::pandas conda-forge::matplotlib conda-forge::seaborn"
     label 'process_low'
     publishDir "${params.outdir}/taxonomy_plots", mode: 'copy'
