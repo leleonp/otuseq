@@ -4,6 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
+// Core processing modules
 include { REMOVE_HOMOPOLYMERS       } from '../modules/remove_homopolymers'
 include { FASTQC                    } from '../modules/fastqc'
 include { CUTADAPT                  } from '../modules/cutadapt'
@@ -15,22 +16,14 @@ include { VSEARCH_MERGE             } from '../modules/vsearch_merge'
 include { CHIMERA_FILTERING         } from '../modules/chimera_filtering'
 include { TAXONOMY_CLASSIFICATION   } from '../modules/taxonomy_classification'
 include { FILTER_TAXA               } from '../modules/filter_taxa'
-include { ABUNDANCE_TABLES          } from '../modules/abundance_tables'
-include { EXPORT_TO_EXCEL           } from '../modules/export_to_excel'
-include { TAXONOMY_BARPLOTS         } from '../modules/taxonomy_barplots'
-include { TAXONOMY_PLOTS            } from '../modules/taxonomy_plots'
-include { ALPHA_DIVERSITY           } from '../modules/alpha_diversity'
-include { BETA_DIVERSITY            } from '../modules/beta_diversity'
-include { RAREFACTION               } from '../modules/rarefaction'
-include { RAREFACTION_PLOTS         } from '../modules/rarefaction_plots'
-include { GENERATE_REPORT           } from '../modules/generate_report'
-// include { TRAIN_CLASSIFIER          } from '../modules/train_classifier'
-// include { TRIMMING_CLASSIFIER       } from '../modules/trimming_classifier'
-include { MERGE_TAXONOMY            } from '../modules/merge_taxonomy'
-
 include { PHYLOGENETIC_TREE         } from '../modules/phylogenetic_tree'
+
+// Phyloseq-based analysis modules (replaces legacy Python modules)
 include { PHYLOSEQ_OBJECT           } from '../modules/phyloseq_object'
 include { PHYLOSEQ_ANALYSES         } from '../modules/phyloseq_analyses'
+
+// Report generation
+include { GENERATE_REPORT           } from '../modules/generate_report'
 
 
 /*
@@ -106,41 +99,11 @@ workflow OTUSEQ {
                     TAXONOMY_CLASSIFICATION.out.classification,
                     excluded_taxa)
 
-        Channel
-            .of(2, 3, 4, 5, 6, 7)
-            .combine(FILTER_TAXA.out)
-            .combine(TAXONOMY_CLASSIFICATION.out.classification)
-            .set { abundance_table_input }
-
-        // Generate Abundance Tables (BIOM format)
-        ABUNDANCE_TABLES(abundance_table_input)
-
-        // Export to Excel
-        EXPORT_TO_EXCEL(abundance_table_input)
-
-        // Generate taxonomy barplots
-        TAXONOMY_BARPLOTS(FILTER_TAXA.out, TAXONOMY_CLASSIFICATION.out.classification)
-
-        // Generate custom taxonomy histograms
-        TAXONOMY_PLOTS(abundance_table_input)
-
-        // Phylogenetic Tree
+        // Phylogenetic Tree (needed for phyloseq object)
         PHYLOGENETIC_TREE(CHIMERA_FILTERING.out.rep_seqs)
 
-        // Calculate Alpha Diversity Indices
-        ALPHA_DIVERSITY(FILTER_TAXA.out)
-
-        // Calculate Beta Diversity
-        BETA_DIVERSITY(FILTER_TAXA.out, PHYLOGENETIC_TREE.out[3])
-
-        // Generate Rarefaction Curves
-        RAREFACTION(FILTER_TAXA.out, PHYLOGENETIC_TREE.out[3])
-
-        // Export rarefaction plots
-        RAREFACTION_PLOTS(RAREFACTION.out[0])
-
         // ====================================================================
-        // PHYLOSEQ-BASED ANALYSIS (NEW APPROACH)
+        // PHYLOSEQ-BASED ANALYSIS
         // ====================================================================
         // Create phyloseq object from QIIME2 artifacts
         PHYLOSEQ_OBJECT(
@@ -151,6 +114,7 @@ workflow OTUSEQ {
         )
 
         // Run all analyses from phyloseq object
+        // This generates: Excel tables, taxonomy plots, rarefaction, alpha/beta diversity
         PHYLOSEQ_ANALYSES(PHYLOSEQ_OBJECT.out.rds)
 
         // Generate comprehensive report if requested
