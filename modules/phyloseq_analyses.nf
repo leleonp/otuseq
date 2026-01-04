@@ -1,6 +1,6 @@
 process PHYLOSEQ_ANALYSES {
     tag "Running phyloseq-based analyses"
-    conda "bioconda::bioconductor-phyloseq=1.46.0 conda-forge::r-base=4.4 conda-forge::r-openxlsx conda-forge::r-vegan bioconda::bioconductor-biomformat conda-forge::r-ape conda-forge::r-inext conda-forge::r-tidyverse conda-forge::r-ggplot2 conda-forge::r-dplyr conda-forge::r-tidyr"
+    container "895739677619.dkr.ecr.us-east-1.amazonaws.com/otuseq-phyloseq:latest"
     label 'process_medium'
     publishDir "${params.outdir}", mode: 'copy', pattern: "{abundance_tables,taxonomy_plots,rarefaction,alpha_diversity,beta_diversity}/**"
 

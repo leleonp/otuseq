@@ -1,7 +1,6 @@
 process RAREFACTION {
     tag "Generating rarefaction curves"
     container "895739677619.dkr.ecr.us-east-1.amazonaws.com/otuseq-rarefaction:latest"
-    conda 'bioconda::qiime2 bioconda::biom-format conda-forge::numpy'
     label 'process_medium'
     publishDir "${params.outdir}/rarefaction", mode: 'copy'
 

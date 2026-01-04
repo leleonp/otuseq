@@ -1,7 +1,6 @@
 process EXPORT_TO_EXCEL {
     tag "Converting BIOM tables to Excel format"
     container "895739677619.dkr.ecr.us-east-1.amazonaws.com/otuseq-excel:latest"
-    conda "bioconda::biom-format conda-forge::pandas conda-forge::openpyxl"
     label 'process_low'
 
     input:
