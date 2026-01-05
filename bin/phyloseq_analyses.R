@@ -96,9 +96,9 @@ for (level_name in names(tax_levels)) {
 }
 
 # ============================================================================
-# 2. TAXONOMY PLOTS - Histograms at each level
+# 2. TAXONOMY PLOTS - Stacked bar plots at each level
 # ============================================================================
-cat("\n2. Generating taxonomy plots...\n")
+cat("\n2. Generating taxonomy stacked bar plots...\n")
 
 theme_set(theme_minimal(base_size = 12))
 
@@ -106,60 +106,89 @@ for (level_name in names(tax_levels)) {
     level_num <- tax_levels[level_name]
 
     tryCatch({
-        # Agglomerate and get top 20
+        # Agglomerate at taxonomic level
         ps_glom <- tax_glom(ps, taxrank = level_name, NArm = TRUE)
-        top20 <- names(sort(taxa_sums(ps_glom), decreasing = TRUE)[1:20])
-        ps_top20 <- prune_taxa(top20, ps_glom)
 
-        # Get mean abundance
-        otu_df <- as.data.frame(otu_table(ps_top20))
-        tax_df <- as.data.frame(tax_table(ps_top20))
+        # Get top 20 most abundant taxa
+        top20 <- names(sort(taxa_sums(ps_glom), decreasing = TRUE)[1:min(20, ntaxa(ps_glom))])
 
-        mean_abundance <- rowMeans(otu_df)
-        names(mean_abundance) <- tax_df[[level_name]]
-        mean_abundance <- sort(mean_abundance, decreasing = TRUE)
+        # Merge everything else into "Other"
+        ps_top <- prune_taxa(top20, ps_glom)
+        ps_other <- prune_taxa(setdiff(taxa_names(ps_glom), top20), ps_glom)
 
-        # Calculate relative abundance
-        rel_abundance <- (mean_abundance / sum(mean_abundance)) * 100
+        # Transform to relative abundance
+        ps_top_rel <- transform_sample_counts(ps_top, function(x) x / sum(x) * 100)
 
-        # Create data frame for plotting
-        plot_data <- data.frame(
-            Taxon = factor(names(mean_abundance), levels = names(mean_abundance)),
-            Absolute = mean_abundance,
-            Relative = rel_abundance
-        )
+        # Prepare data for plotting
+        melt_data <- psmelt(ps_top_rel)
 
-        # Plot
-        p1 <- ggplot(plot_data, aes(x = Taxon, y = Absolute, fill = Taxon)) +
-            geom_bar(stat = "identity") +
-            theme(axis.text.x = element_text(angle = 45, hjust = 1),
-                  legend.position = "none") +
-            labs(title = sprintf("Top 20 Taxa - Level %d (Absolute Abundance)", level_num),
-                 x = level_name, y = "Mean Abundance (reads)") +
-            scale_fill_viridis_d(option = "turbo")
+        # Add "Other" category if there are taxa outside top 20
+        if (ntaxa(ps_other) > 0) {
+            other_abundance <- sample_sums(ps_other)
+            total_abundance <- sample_sums(ps_glom)
+            other_rel <- (other_abundance / total_abundance) * 100
 
-        p2 <- ggplot(plot_data, aes(x = Taxon, y = Relative, fill = Taxon)) +
-            geom_bar(stat = "identity") +
-            theme(axis.text.x = element_text(angle = 45, hjust = 1),
-                  legend.position = "none") +
-            labs(title = sprintf("Top 20 Taxa - Level %d (Relative Abundance)", level_num),
-                 x = level_name, y = "Relative Abundance (%)") +
-            scale_fill_viridis_d(option = "turbo")
+            other_df <- data.frame(
+                OTU = "Other",
+                Sample = names(other_rel),
+                Abundance = other_rel
+            )
+            other_df[[level_name]] <- "Other"
 
-        # Combine plots
-        library(gridExtra)
-        combined <- grid.arrange(p1, p2, ncol = 1)
+            # Add other columns to match
+            for (col in setdiff(names(melt_data), names(other_df))) {
+                other_df[[col]] <- NA
+            }
 
-        # Save
+            melt_data <- rbind(melt_data, other_df)
+        }
+
+        # Order taxa by mean abundance (most abundant first)
+        taxa_order <- melt_data %>%
+            group_by(!!sym(level_name)) %>%
+            summarise(mean_abund = mean(Abundance, na.rm = TRUE)) %>%
+            arrange(desc(mean_abund)) %>%
+            pull(!!sym(level_name))
+
+        # Move "Other" to the end if present
+        if ("Other" %in% taxa_order) {
+            taxa_order <- c(setdiff(taxa_order, "Other"), "Other")
+        }
+
+        melt_data[[level_name]] <- factor(melt_data[[level_name]], levels = rev(taxa_order))
+
+        # Create stacked bar plot
+        p <- ggplot(melt_data, aes(x = Sample, y = Abundance, fill = !!sym(level_name))) +
+            geom_bar(stat = "identity", position = "stack") +
+            theme_minimal(base_size = 12) +
+            theme(
+                axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+                legend.position = "right",
+                legend.title = element_text(face = "bold"),
+                plot.title = element_text(hjust = 0.5, face = "bold")
+            ) +
+            labs(
+                title = sprintf("Taxonomic Composition - %s Level", level_name),
+                x = "Sample",
+                y = "Relative Abundance (%)",
+                fill = level_name
+            ) +
+            scale_fill_manual(values = c(
+                colorRampPalette(RColorBrewer::brewer.pal(12, "Paired"))(length(taxa_order) - 1),
+                "#CCCCCC"  # Gray for "Other"
+            ))
+
+        # Save plots
         pdf_file <- file.path(outdir, "taxonomy_plots",
                              sprintf("taxonomy_level%d_histogram.pdf", level_num))
         png_file <- file.path(outdir, "taxonomy_plots",
                              sprintf("taxonomy_level%d_histogram.png", level_num))
 
-        ggsave(pdf_file, combined, width = 14, height = 12, dpi = 300)
-        ggsave(png_file, combined, width = 14, height = 12, dpi = 300)
+        ggsave(pdf_file, p, width = 12, height = 8, dpi = 300)
+        ggsave(png_file, p, width = 12, height = 8, dpi = 300)
 
-        cat(sprintf("  ✓ Level %d (%s): plots saved\n", level_num, level_name))
+        cat(sprintf("  ✓ Level %d (%s): stacked bar plot saved (%d taxa + Other)\n",
+                    level_num, level_name, length(top20)))
     }, error = function(e) {
         cat(sprintf("  ✗ Level %d (%s): %s\n", level_num, level_name, e$message))
     })
